@@ -15,7 +15,7 @@ class Decryptor(context: Context, private val listener: Listener, private val op
     data class Options(
         /** Rebuild game CIAs as CCI, since Azahar's game list only shows CCI/3DS files */
         val gameCiaAsCci: Boolean = true,
-        /** Write decrypted updates here instead of next to the original (null = next to it) */
+        /** Write decrypted updates and DLC here instead of next to the original (null = next to it) */
         val updateDir: File? = null,
     )
 
@@ -60,7 +60,8 @@ class Decryptor(context: Context, private val listener: Listener, private val op
             info.kind == TitleKind.DLC -> "$stem (DLC)-decrypted.cia"
             else -> "$stem-decrypted.cia"
         }
-        val dir = if (info.format == RomFormat.CIA && info.kind == TitleKind.UPDATE && options.updateDir != null)
+        val addOn = info.format == RomFormat.CIA && (info.kind == TitleKind.UPDATE || info.kind == TitleKind.DLC)
+        val dir = if (addOn && options.updateDir != null)
             options.updateDir
         else rom.absoluteFile.parentFile
         return File(dir, name)

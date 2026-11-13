@@ -15,7 +15,7 @@ It runs the same pipeline as `decrypt.sh` on the device:
 * Settings screen (gear button in the header):
   * **Save games as .cci**: on by default; turn off to keep games as `.cia`
   * **Delete encrypted originals**: off by default; deletes each original once its decrypted copy has been written. Files that fail are kept
-  * **Sort updates into a folder**: off by default; saves decrypted updates to `Updates` inside the ROM folder, or a folder you choose
+  * **Sort updates and DLC into a folder**: off by default; saves decrypted updates and DLC to `Updates and DLC` inside the ROM folder, or a folder you choose
 * Shows the current file, its stage, and per-file and overall progress bars, plus a log
 * Keeps running in the background with a progress notification (can be cancelled)
 

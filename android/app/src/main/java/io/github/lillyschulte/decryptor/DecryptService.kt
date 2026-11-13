@@ -106,7 +106,7 @@ class DecryptService : Service() {
         decryptor = d
 
         JobState.log("Folder: ${dir.path}")
-        options.updateDir?.let { JobState.log("Updates go to: ${it.path}") }
+        options.updateDir?.let { JobState.log("Updates and DLC go to: ${it.path}") }
         if (deleteOriginals) JobState.log("Encrypted originals are deleted after decrypting")
         val roms = Decryptor.scan(dir)
         if (roms.isEmpty()) {

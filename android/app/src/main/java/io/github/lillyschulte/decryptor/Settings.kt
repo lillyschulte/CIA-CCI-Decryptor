@@ -22,21 +22,21 @@ class Settings(context: Context) {
         get() = prefs.getBoolean("delete_originals", false)
         set(v) = prefs.edit().putBoolean("delete_originals", v).apply()
 
-    /** Write decrypted updates to [updateDir] instead of next to the original */
+    /** Write decrypted updates and DLC to [updateDir] instead of next to the original */
     var sortUpdates: Boolean
         get() = prefs.getBoolean("sort_updates", false)
         set(v) = prefs.edit().putBoolean("sort_updates", v).apply()
 
-    /** Folder for decrypted updates; null means [DEFAULT_UPDATE_FOLDER] inside the ROM folder */
+    /** Folder for decrypted updates and DLC; null means [DEFAULT_UPDATE_FOLDER] inside the ROM folder */
     var updateFolder: String?
         get() = prefs.getString("update_folder", null)
         set(v) = prefs.edit().putString("update_folder", v).apply()
 
-    /** Where decrypted updates go for ROMs in [romDir], or null to keep them next to the original */
+    /** Where decrypted updates and DLC go for ROMs in [romDir], or null to keep them next to the original */
     fun updateDir(romDir: File): File? =
         if (!sortUpdates) null else updateFolder?.let(::File) ?: File(romDir, DEFAULT_UPDATE_FOLDER)
 
     companion object {
-        const val DEFAULT_UPDATE_FOLDER = "Updates"
+        const val DEFAULT_UPDATE_FOLDER = "Updates and DLC"
     }
 }
