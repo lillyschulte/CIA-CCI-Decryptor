@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Batch CIA CCI Decryptor - Linux port of "Batch CIA CCI Decryptor.bat"
 #
-# Usage: ./decrypt.sh [--debug] [DIRECTORY]
+# Usage: ./decrypt.sh [--cia] [--debug] [DIRECTORY]
 #   DIRECTORY  folder containing .3ds/.cci/.cia files (default: the folder this script is in)
+#   --cia      save decrypted game CIAs as .cia instead of .cci (Azahar's game list only
+#              shows .cci/.3ds files; CIAs have to be installed with File > Install CIA)
 #   --debug    print commands and tool output, write ctrdecrypt output to log.txt,
 #              and don't skip files that already look decrypted
 
@@ -13,11 +15,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN="$SCRIPT_DIR/bin"
 
 DEBUG=0
+GAME_FORMAT=cci
 WORKDIR="$SCRIPT_DIR"
 for arg in "$@"; do
     case "$arg" in
         --debug) DEBUG=1 ;;
-        -h|--help) sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        --cia) GAME_FORMAT=cia ;;
+        --cci) GAME_FORMAT=cci ;;
+        -h|--help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) WORKDIR="$arg" ;;
     esac
 done
@@ -146,7 +151,12 @@ for rom in *.cia; do
 
     # Pick output type based on the TitleID category
     if grep -Eq '^T.*d.*00040000' content.txt; then
-        run "$MAKEROM" -f cia -ignoresign -target p -o "$name-decrypted.cia" "${args[@]}" -ver "$ver"
+        if [[ $GAME_FORMAT == cci ]]; then
+            # The content index is the CCI partition (0 game, 1 manual, 2 download play child)
+            run "$MAKEROM" -f cci -ignoresign -target p -o "$name-decrypted.cci" "${args[@]}"
+        else
+            run "$MAKEROM" -f cia -ignoresign -target p -o "$name-decrypted.cia" "${args[@]}" -ver "$ver"
+        fi
     fi
 
     if grep -Eq '^T.*d.*0004000e' content.txt; then
