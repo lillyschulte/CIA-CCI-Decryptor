@@ -44,7 +44,9 @@ echo "Building makerom..."
 (
     cd "$WORK/Project_CTR/makerom"
     export PATH="$WORK/toolbin:$PATH"
+    # ARFLAGS: the makefiles use "cr -o", which GNU ar tolerates but llvm-ar rejects
     MAKEARGS=(PROJECT_PLATFORM=GNU PROJECT_PLATFORM_ARCH=arm64 CC="$CC" CXX="$CXX"
+              ARFLAGS=rcs
               "ARCHFLAGS=-static-libstdc++ -Wno-unused-command-line-argument")
     make -j"$(nproc)" deps "${MAKEARGS[@]}"
     make -j"$(nproc)" program "${MAKEARGS[@]}"
