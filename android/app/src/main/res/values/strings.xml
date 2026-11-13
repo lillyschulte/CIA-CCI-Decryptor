@@ -23,6 +23,10 @@
         <item quantity="other">%d ROMs found</item>
     </plurals>
 
+    <string name="output_label">Output</string>
+    <string name="cci_switch">Save games as .cci</string>
+    <string name="cci_switch_hint">Azahar\'s game list only shows .cci files. Turn this off to keep games as .cia and install them with Install CIA. Updates and DLC are always .cia.</string>
+
     <string name="decrypt">Decrypt all</string>
     <string name="cancel">Cancel</string>
 

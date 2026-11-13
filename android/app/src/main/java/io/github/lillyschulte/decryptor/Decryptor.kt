@@ -10,7 +10,12 @@ import kotlin.concurrent.thread
  * Port of decrypt.sh for a single ROM: run ctrdecrypt to produce decrypted .ncch
  * partitions next to the ROM, then makerom to rebuild them into a CCI/CIA.
  */
-class Decryptor(context: Context, private val listener: Listener) {
+class Decryptor(
+    context: Context,
+    private val listener: Listener,
+    /** Rebuild game CIAs as CCI, since Azahar's game list only shows CCI/3DS files */
+    private val gameCiaAsCci: Boolean = true,
+) {
 
     interface Listener {
         fun log(line: String)
@@ -41,10 +46,14 @@ class Decryptor(context: Context, private val listener: Listener) {
         current?.destroy()
     }
 
+    /** Whether the output is a CCI. Updates and DLC stay CIA: Azahar can only install those. */
+    fun buildsCci(info: RomInfo) =
+        info.format == RomFormat.CCI || (gameCiaAsCci && info.kind == TitleKind.GAME)
+
     fun outputFile(rom: File, info: RomInfo): File {
         val stem = rom.nameWithoutExtension
         val name = when {
-            info.format == RomFormat.CCI -> "$stem-decrypted.cci"
+            buildsCci(info) -> "$stem-decrypted.cci"
             info.kind == TitleKind.UPDATE -> "$stem (Update)-decrypted.cia"
             info.kind == TitleKind.DLC -> "$stem (DLC)-decrypted.cia"
             else -> "$stem-decrypted.cia"
@@ -81,8 +90,9 @@ class Decryptor(context: Context, private val listener: Listener) {
                 return false
             }
 
-            val args = mutableListOf(makerom.path, "-f", if (info.format == RomFormat.CCI) "cci" else "cia")
-            if (info.format == RomFormat.CIA && info.kind == TitleKind.DLC) args += "-dlc"
+            val cci = buildsCci(info)
+            val args = mutableListOf(makerom.path, "-f", if (cci) "cci" else "cia")
+            if (!cci && info.kind == TitleKind.DLC) args += "-dlc"
             args += listOf("-ignoresign", "-target", "p", "-o", partial.absolutePath)
             for (p in ncch) {
                 val (part, hexId) = pattern.matchEntire(p.name)!!.destructured
@@ -90,16 +100,17 @@ class Decryptor(context: Context, private val listener: Listener) {
                 val arg = when {
                     // CCI: partition index is the hex field
                     info.format == RomFormat.CCI -> "$contentId:$contentId"
-                    // Game CIA: index:index, like the desktop script
+                    // Game CIA, rebuilt as CIA or CCI: content index:content index. For a CCI the
+                    // content index is the partition (0 game, 1 manual, 2 download play child)
                     info.kind == TitleKind.GAME -> "$part:$part"
                     // Update/DLC: index:content id
                     else -> "$part:$contentId"
                 }
                 args += listOf("-i", "${p.absolutePath}:$arg")
             }
-            if (info.format == RomFormat.CIA) args += listOf("-ver", info.version.toString())
+            if (!cci) args += listOf("-ver", info.version.toString())
 
-            listener.stage(if (info.format == RomFormat.CCI) "Building CCI" else "Building CIA")
+            listener.stage(if (cci) "Building CCI" else "Building CIA")
             // makerom builds the whole file in memory and writes it at the end, so the output size
             // can't show progress. Estimate from time instead: on the Thor, building takes ~1.25x
             // as long as decrypting the same ROM.

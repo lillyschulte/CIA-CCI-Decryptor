@@ -15,6 +15,7 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.ScrollView
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import java.io.File
@@ -25,6 +26,7 @@ class MainActivity : Activity() {
     companion object {
         private const val REQUEST_FOLDER = 1
         private const val PREF_FOLDER = "rom_folder"
+        private const val PREF_GAME_CIA_AS_CCI = "game_cia_as_cci"
     }
 
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
@@ -34,6 +36,7 @@ class MainActivity : Activity() {
     private lateinit var romSummary: TextView
     private lateinit var decryptButton: Button
     private lateinit var cancelButton: Button
+    private lateinit var cciSwitch: Switch
     private lateinit var currentFile: TextView
     private lateinit var stage: TextView
     private lateinit var fileProgress: ProgressBar
@@ -56,6 +59,7 @@ class MainActivity : Activity() {
         romSummary = findViewById(R.id.rom_summary)
         decryptButton = findViewById(R.id.decrypt_button)
         cancelButton = findViewById(R.id.cancel_button)
+        cciSwitch = findViewById(R.id.cci_switch)
         currentFile = findViewById(R.id.current_file)
         stage = findViewById(R.id.stage)
         fileProgress = findViewById(R.id.file_progress)
@@ -69,6 +73,10 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.folder_button).setOnClickListener { pickFolder() }
         decryptButton.setOnClickListener { startBatch() }
         cancelButton.setOnClickListener { DecryptService.cancel(this) }
+        cciSwitch.isChecked = prefs.getBoolean(PREF_GAME_CIA_AS_CCI, true)
+        cciSwitch.setOnCheckedChangeListener { _, checked ->
+            prefs.edit().putBoolean(PREF_GAME_CIA_AS_CCI, checked).apply()
+        }
 
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -174,7 +182,7 @@ class MainActivity : Activity() {
     private fun startBatch() {
         val folder = selectedFolder() ?: return pickFolder()
         if (!hasFileAccess()) return requestAllFilesAccess()
-        DecryptService.start(this, folder.path)
+        DecryptService.start(this, folder.path, cciSwitch.isChecked)
     }
 
     private fun render() {
@@ -183,6 +191,7 @@ class MainActivity : Activity() {
 
         decryptButton.isEnabled = !running && folder != null && hasFileAccess() && folder.isDirectory
         cancelButton.visibility = if (running) View.VISIBLE else View.GONE
+        cciSwitch.isEnabled = !running
         if (running) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 

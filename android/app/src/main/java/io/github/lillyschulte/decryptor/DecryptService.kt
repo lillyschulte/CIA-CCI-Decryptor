@@ -19,13 +19,16 @@ class DecryptService : Service() {
 
     companion object {
         private const val EXTRA_FOLDER = "folder"
+        private const val EXTRA_GAME_CIA_AS_CCI = "game_cia_as_cci"
         private const val ACTION_CANCEL = "cancel"
         private const val CHANNEL = "progress"
         private const val NOTIFICATION_ID = 1
 
-        fun start(context: Context, folder: String) {
+        fun start(context: Context, folder: String, gameCiaAsCci: Boolean) {
             context.startForegroundService(
-                Intent(context, DecryptService::class.java).putExtra(EXTRA_FOLDER, folder)
+                Intent(context, DecryptService::class.java)
+                    .putExtra(EXTRA_FOLDER, folder)
+                    .putExtra(EXTRA_GAME_CIA_AS_CCI, gameCiaAsCci)
             )
         }
 
@@ -50,6 +53,7 @@ class DecryptService : Service() {
             return START_NOT_STICKY
         }
         val folder = intent?.getStringExtra(EXTRA_FOLDER)
+        val gameCiaAsCci = intent?.getBooleanExtra(EXTRA_GAME_CIA_AS_CCI, true) ?: true
         createChannel()
         startForeground(NOTIFICATION_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         if (JobState.running || folder == null) return START_NOT_STICKY
@@ -63,7 +67,7 @@ class DecryptService : Service() {
 
         thread(name = "decrypt-batch") {
             try {
-                runBatch(File(folder))
+                runBatch(File(folder), gameCiaAsCci)
             } catch (e: Exception) {
                 JobState.log("Error: ${e.message ?: e.javaClass.simpleName}")
                 JobState.summary = "Stopped because of an error"
@@ -81,7 +85,7 @@ class DecryptService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun runBatch(dir: File) {
+    private fun runBatch(dir: File, gameCiaAsCci: Boolean) {
         val d = Decryptor(this, object : Decryptor.Listener {
             override fun log(line: String) = JobState.log(line)
             override fun stage(text: String) {
@@ -95,7 +99,7 @@ class DecryptService : Service() {
                 JobState.changed()
                 updateNotification()
             }
-        })
+        }, gameCiaAsCci)
         decryptor = d
 
         JobState.log("Folder: ${dir.path}")
