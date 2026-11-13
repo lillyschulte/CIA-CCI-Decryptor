@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Batch CIA CCI Decryptor - Linux port of "Batch CIA CCI Decryptor.bat"
 #
-# Usage: ./decrypt.sh [--cia] [--debug] [DIRECTORY]
+# Usage: ./decrypt.sh [--cia] [--keep-title-id] [--debug] [DIRECTORY]
 #   DIRECTORY  folder containing .3ds/.cci/.cia files (default: the folder this script is in)
 #   --cia      save decrypted game CIAs as .cia instead of .cci (Azahar's game list only
 #              shows .cci/.3ds files; CIAs have to be installed with File > Install CIA)
+#   --keep-title-id  keep a leading title ID in output names; by default
+#              0004000000051500_Game.cia is saved as Game-decrypted.cci
 #   --debug    print commands and tool output, write ctrdecrypt output to log.txt,
 #              and don't skip files that already look decrypted
 
@@ -16,13 +18,15 @@ BIN="$SCRIPT_DIR/bin"
 
 DEBUG=0
 GAME_FORMAT=cci
+STRIP_TITLE_ID=1
 WORKDIR="$SCRIPT_DIR"
 for arg in "$@"; do
     case "$arg" in
         --debug) DEBUG=1 ;;
         --cia) GAME_FORMAT=cia ;;
         --cci) GAME_FORMAT=cci ;;
-        -h|--help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        --keep-title-id) STRIP_TITLE_ID=0 ;;
+        -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) WORKDIR="$arg" ;;
     esac
 done
@@ -85,6 +89,17 @@ build() {
     run "$MAKEROM" "$@" -ignoresign -target p -o "$out" && WRITTEN[${out,,}]="$src"
 }
 
+# Name for output files: the ROM name without a leading 16-digit title ID
+# ("0004000000051500_Game" -> "Game"), unless --keep-title-id is given
+TITLE_ID_PREFIX='^[0-9A-Fa-f]{16}[ _.-]+(.+)$'
+output_name() {
+    if (( STRIP_TITLE_ID )) && [[ $1 =~ $TITLE_ID_PREFIX ]]; then
+        echo "${BASH_REMATCH[1]}"
+    else
+        echo "$1"
+    fi
+}
+
 # Report a failed decrypt and remove whatever ctrdecrypt left behind
 decrypt_failed() {
     echo "Failed to decrypt \"$1\" (run with --debug and see log.txt for details)"
@@ -108,6 +123,7 @@ rm -f -- *.ncch
 # ---- .3ds / .cci ----
 for rom in *.3ds *.cci; do
     name="${rom%.*}"
+    out=$(output_name "$name")
     [[ "${name,,}" == *decrypted* ]] && continue
 
     "$CTRTOOL" --seeddb="$SEEDDB" "$rom" >content.txt 2>/dev/null
@@ -137,12 +153,13 @@ for rom in *.3ds *.cci; do
         continue
     fi
 
-    build "$name-decrypted.cci" "$rom" -f cci "${args[@]}"
+    build "$out-decrypted.cci" "$rom" -f cci "${args[@]}"
 done
 
 # ---- .cia ----
 for rom in *.cia; do
     name="${rom%.*}"
+    out=$(output_name "$name")
     [[ "${name,,}" == *decrypted* ]] && continue
 
     "$CTRTOOL" --seeddb="$SEEDDB" "$rom" >content.txt 2>/dev/null
@@ -184,18 +201,27 @@ for rom in *.cia; do
     if grep -Eq '^T.*d.*00040000' content.txt; then
         if [[ $GAME_FORMAT == cci ]]; then
             # The content index is the CCI partition (0 game, 1 manual, 2 download play child)
-            build "$name-decrypted.cci" "$rom" -f cci "${args[@]}"
+            build "$out-decrypted.cci" "$rom" -f cci "${args[@]}"
         else
-            build "$name-decrypted.cia" "$rom" -f cia "${args[@]}" -ver "$ver"
+            build "$out-decrypted.cia" "$rom" -f cia "${args[@]}" -ver "$ver"
         fi
     fi
 
     if grep -Eq '^T.*d.*0004000e' content.txt; then
-        build "$name (Update)-decrypted.cia" "$rom" -f cia "${dlc[@]}" -ver "$ver"
+        build "$out (Update)-decrypted.cia" "$rom" -f cia "${dlc[@]}" -ver "$ver"
     fi
 
     if grep -Eq '^T.*d.*0004008c' content.txt; then
         run "$DLCHELPER" "$name" "$ver"
+        # dlchelper names its output after the ROM, so rename it if the title ID is removed
+        if [[ "$out" != "$name" && -f "$name (DLC)-decrypted.cia" ]]; then
+            if [[ -e "$out (DLC)-decrypted.cia" ]]; then
+                echo "Kept \"$name (DLC)-decrypted.cia\": \"$out (DLC)-decrypted.cia\" already exists"
+                echo
+            else
+                mv -- "$name (DLC)-decrypted.cia" "$out (DLC)-decrypted.cia"
+            fi
+        fi
     fi
 done
 
