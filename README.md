@@ -40,7 +40,7 @@
 
 - **Every 3DS format.** Game, update and DLC CIAs, plus `.3ds`/`.cci` cartridge dumps
 - **Detects the title type** (game / update / DLC) and rebuilds each one correctly
-- **Azahar-ready output.** Decrypted CIAs install in Azahar; cartridge dumps come out as decrypted, trimmed `.cci` files
+- **Azahar-ready output.** Games come out as decrypted `.cci` files that show up in Azahar's game list; updates and DLC come out as CIAs that install in Azahar
 - **Keeps the title version**, so updates are recognised properly
 - **Seed-encrypted titles** are handled with a bundled seed database, with an online fallback
 - **Safe to re-run.** Files that are already decrypted, or already have a decrypted copy, are skipped
@@ -80,7 +80,7 @@ A standalone app for arm64 Android devices, designed for handhelds like the AYN 
 </tr>
 </table>
 
-Decrypted copies are written next to the originals, using the [same names as on Linux](#output-files), except that games are saved as `Game-decrypted.cci` by default so they show up in Azahar's game list (which ignores `.cia` files). Updates and DLC are always `.cia`, since Azahar installs them.
+Decrypted copies are written next to the originals, using the [same names as on Linux](#output-files).
 
 The settings screen (gear button) has these options:
 
@@ -125,6 +125,7 @@ Put your CIA, 3DS or CCI files in the folder containing `decrypt.sh` and run it,
 ```bash
 ./decrypt.sh                    # decrypt everything next to the script
 ./decrypt.sh /path/to/games     # decrypt everything in another folder
+./decrypt.sh --cia              # keep games as .cia instead of .cci
 ```
 
 ### Output files
@@ -134,9 +135,12 @@ Decrypted files are written next to the originals:
 | Input | Output |
 | :--- | :--- |
 | `Game.3ds` / `Game.cci` | `Game-decrypted.cci` |
-| Game CIA | `Game-decrypted.cia` |
+| Game CIA | `Game-decrypted.cci` (`Game-decrypted.cia` with `--cia`) |
 | Update CIA | `Game (Update)-decrypted.cia` |
 | DLC CIA | `Game (DLC)-decrypted.cia` |
+
+> [!NOTE]
+> Game CIAs are saved as `.cci` by default because Azahar's game list ignores `.cia` files. With `--cia` they stay CIAs, which you install in Azahar with **File > Install CIA**. Updates and DLC are always CIAs, since Azahar can only install them.
 
 <details>
 <summary><b>Debug mode</b></summary>
