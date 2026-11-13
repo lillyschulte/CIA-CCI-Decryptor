@@ -73,12 +73,13 @@ A standalone app for arm64 Android devices, designed for handhelds like the AYN 
 - Current file and stage, with per-file and overall progress bars
 - Keeps running in the background, with a progress notification
 - Can be cancelled at any time without leaving partial files behind
+- Games saved as `.cci` so they appear in Azahar's game list
 
 </td>
 </tr>
 </table>
 
-Decrypted copies are written next to the originals, using the [same names as on Linux](#output-files).
+Decrypted copies are written next to the originals, using the [same names as on Linux](#output-files), except that games are saved as `Game-decrypted.cci` by default so they show up in Azahar's game list (which ignores `.cia` files). The **Save games as .cci** switch turns this off. Updates and DLC are always `.cia`, since Azahar installs them.
 The app's source and build instructions are on the [`android` branch](https://github.com/lillyschulte/CIA-CCI-Decryptor/tree/android/android).
 
 > [!TIP]
