@@ -20,11 +20,11 @@
 <p align="center">
   <a href="https://github.com/lillyschulte/decryptor/releases/latest"><b>Download the Android app</b></a>
   &nbsp;·&nbsp;
-  <a href="#-linux">Linux setup</a>
+  <a href="#linux">Linux setup</a>
   &nbsp;·&nbsp;
-  <a href="#-how-it-works">How it works</a>
+  <a href="#how-it-works">How it works</a>
   &nbsp;·&nbsp;
-  <a href="#-credits">Credits</a>
+  <a href="#credits">Credits</a>
 </p>
 
 <p align="center">
@@ -36,7 +36,7 @@
 
 ---
 
-## ✨ Features
+## Features
 
 - **Every 3DS format.** Game, update and DLC CIAs, plus `.3ds`/`.cci` cartridge dumps
 - **Detects the title type** (game / update / DLC) and rebuilds each one correctly
@@ -49,7 +49,7 @@
 > [!NOTE]
 > Azahar uses the `.cci` extension, which is the real name of the format used by `.3ds` files.
 
-## 📱 Android app
+## Android app
 
 A standalone app for arm64 Android devices, designed for handhelds like the AYN Thor. It decrypts ROMs on the device itself: no PC needed.
 
@@ -84,7 +84,7 @@ The app's source and build instructions are on the [`android` branch](https://gi
 > [!TIP]
 > Requires Android 11 or newer on a 64-bit ARM device. The app needs "All files access" so it can read and write ROMs in any folder.
 
-## 🐧 Linux
+## Linux
 
 ### Requirements
 
@@ -139,7 +139,7 @@ Shows each command and its output, writes the `ctrdecrypt` log to `log.txt`, and
 
 </details>
 
-## 🔧 How it works
+## How it works
 
 Both versions run the same two-step pipeline for each ROM:
 
@@ -158,7 +158,7 @@ The title type and version are read from the ROM's headers. On Linux, `ctrtool` 
 
 Some titles use seed crypto. `ctrdecrypt` looks up seeds in the bundled `seeddb.bin` and, if a seed is missing, tries to fetch it from Nintendo's servers (this needs an internet connection).
 
-## 🙏 Credits
+## Credits
 
 | Component | Author |
 | :--- | :--- |
@@ -171,7 +171,7 @@ Some titles use seed crypto. `ctrdecrypt` looks up seeds in the bundled `seeddb.
 
 Linux and Android ports by [lillyschulte](https://github.com/lillyschulte).
 
-## 📄 License
+## License
 
 Released under the [MIT License](LICENSE).
 
