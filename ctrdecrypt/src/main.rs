@@ -231,8 +231,10 @@ fn dump_section(ncch: &mut File, cia: &mut CiaReader, offset: u64, size: u32, se
     }
 }
 
-fn get_new_key(key_y: u128, header: &NcchHdr, titleid: String) -> u128 {
-    let mut new_key: u128 = 0;
+/// Returns the seeded KeyY, or None if no seed that matches the header's seed check
+/// could be found in seeddb.bin or on Nintendo's servers.
+fn get_new_key(key_y: u128, header: &NcchHdr, titleid: String) -> Option<u128> {
+    let mut new_key: Option<u128> = None;
     let mut seeds: HashMap<String, [u8; 16]> = HashMap::new();
     // Look for seeddb.bin in the current directory first, then next to the executable
     let seeddb = File::open("seeddb.bin").or_else(|e| {
@@ -270,8 +272,12 @@ fn get_new_key(key_y: u128, header: &NcchHdr, titleid: String) -> u128 {
         for country in ["JP", "US", "GB", "KR", "TW", "AU", "NZ"] {
             let req = attohttpc::get(format!("https://kagiya-ctr.cdn.nintendo.net/title/0x{}/ext_key?country={}", titleid, country))
                 .danger_accept_invalid_certs(true)
-                .send()
-                .unwrap();
+                .send();
+            // Try every region even if one request fails; a single error may be transient
+            let req = match req {
+                Ok(req) => req,
+                Err(e) => { debug!("Could not reach Nintendo servers ({}): {}", country, e); continue; }
+            };
             if req.is_success() {
                 let bytes = req.bytes().unwrap();
 
@@ -295,7 +301,7 @@ fn get_new_key(key_y: u128, header: &NcchHdr, titleid: String) -> u128 {
 
         if BigEndian::read_u32(&hex::decode(sha_sum.get(0..8).unwrap()).unwrap()) == seed_check {
             let keystr = sha256::digest([u128::to_be_bytes(key_y), seeds[&titleid]].concat());
-            new_key = BigEndian::read_u128(&hex::decode(keystr.get(0..32).unwrap()).unwrap());
+            new_key = Some(BigEndian::read_u128(&hex::decode(keystr.get(0..32).unwrap()).unwrap()));
         }
     }
 
@@ -369,8 +375,16 @@ fn parse_ncch(cia: &mut CiaReader, offs: u64, mut titleid: [u8; 8]) {
     let use_seed_crypto: bool = (header.flags[7] & 32) != 0;
     let mut key_y = ncch_key_y;
 
-    if use_seed_crypto {
-        key_y = get_new_key(ncch_key_y, &header, hex::encode(titleid));
+    if use_seed_crypto && encrypted {
+        // Without the right seed the output would be garbage, so fail instead of writing it
+        key_y = match get_new_key(ncch_key_y, &header, hex::encode(titleid)) {
+            Some(key) => key,
+            None => {
+                eprintln!("Error: no valid seed for title {} (not in seeddb.bin, and it could not be fetched from Nintendo's servers)",
+                    hex::encode(titleid).to_uppercase());
+                std::process::exit(2);
+            }
+        };
         debug!("Uses 9.6 NCCH Seed crypto with KeyY: {:032X}", key_y);
     }
 
