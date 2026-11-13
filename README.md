@@ -10,15 +10,15 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/lillyschulte/decryptor/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/lillyschulte/decryptor?style=flat-square&label=release&color=F5A524"></a>
-  <a href="https://github.com/lillyschulte/decryptor/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/lillyschulte/decryptor/total?style=flat-square&color=1F2933"></a>
+  <a href="https://github.com/lillyschulte/CIA-CCI-Decryptor/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/lillyschulte/CIA-CCI-Decryptor?style=flat-square&label=release&color=F5A524"></a>
+  <a href="https://github.com/lillyschulte/CIA-CCI-Decryptor/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/lillyschulte/CIA-CCI-Decryptor/total?style=flat-square&color=1F2933"></a>
   <img alt="Android 11+" src="https://img.shields.io/badge/Android-11%2B-3DDC84?style=flat-square&logo=android&logoColor=white">
   <img alt="Linux x86_64" src="https://img.shields.io/badge/Linux-x86__64-FCC624?style=flat-square&logo=linux&logoColor=black">
-  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/lillyschulte/decryptor?style=flat-square&color=blue"></a>
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/lillyschulte/CIA-CCI-Decryptor?style=flat-square&color=blue"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/lillyschulte/decryptor/releases/latest"><b>Download the Android app</b></a>
+  <a href="https://github.com/lillyschulte/CIA-CCI-Decryptor/releases/latest"><b>Download the Android app</b></a>
   &nbsp;·&nbsp;
   <a href="#linux">Linux setup</a>
   &nbsp;·&nbsp;
@@ -59,7 +59,7 @@ A standalone app for arm64 Android devices, designed for handhelds like the AYN 
 
 **Install**
 
-1. [Download the APK](https://github.com/lillyschulte/decryptor/releases/latest) and install it
+1. [Download the APK](https://github.com/lillyschulte/CIA-CCI-Decryptor/releases/latest) and install it
 2. Open **CIA CCI Decryptor** and tap **Allow access** to grant "All files access"
 3. Tap **Choose folder** and pick your 3DS ROM folder
 4. Tap **Decrypt all**
@@ -79,7 +79,7 @@ A standalone app for arm64 Android devices, designed for handhelds like the AYN 
 </table>
 
 Decrypted copies are written next to the originals, using the [same names as on Linux](#output-files).
-The app's source and build instructions are on the [`android` branch](https://github.com/lillyschulte/decryptor/tree/android/android).
+The app's source and build instructions are on the [`android` branch](https://github.com/lillyschulte/CIA-CCI-Decryptor/tree/android/android).
 
 > [!TIP]
 > Requires Android 11 or newer on a 64-bit ARM device. The app needs "All files access" so it can read and write ROMs in any folder.
@@ -100,8 +100,8 @@ sudo pacman -S rust unzip         # Arch
 ### Setup
 
 ```bash
-git clone https://github.com/lillyschulte/decryptor
-cd decryptor
+git clone https://github.com/lillyschulte/CIA-CCI-Decryptor
+cd CIA-CCI-Decryptor
 ./setup.sh
 ```
 
