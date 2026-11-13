@@ -127,11 +127,12 @@ Put your CIA, 3DS or CCI files in the folder containing `decrypt.sh` and run it,
 ./decrypt.sh                    # decrypt everything next to the script
 ./decrypt.sh /path/to/games     # decrypt everything in another folder
 ./decrypt.sh --cia              # keep games as .cia instead of .cci
+./decrypt.sh --keep-title-id    # keep a leading title ID in output names
 ```
 
 ### Output files
 
-Decrypted files are written next to the originals:
+Decrypted files are written next to the originals. A leading title ID is removed from the name, so `0004000000051500_Game.cia` becomes `Game-decrypted.cci` (use `--keep-title-id` to keep it).
 
 | Input | Output |
 | :--- | :--- |
