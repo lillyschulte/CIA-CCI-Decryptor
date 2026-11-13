@@ -87,6 +87,7 @@ The settings screen (gear button) has these options:
 | Setting | Default | |
 | --- | --- | --- |
 | Save games as .cci | On | Turn off to keep games as `.cia` |
+| Remove title ID from file names | On | `0004000000051500_Game.cia` is saved as `Game-decrypted.cci` |
 | Delete encrypted originals | Off | Deletes each original once its decrypted copy has been written |
 | Sort updates and DLC into a folder | Off | Saves decrypted updates and DLC to `Updates and DLC` in the ROM folder, or a folder you choose |
 
