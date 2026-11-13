@@ -28,6 +28,8 @@
     <string name="output_label">Output</string>
     <string name="cci_switch">Save games as .cci</string>
     <string name="cci_switch_hint">Azahar\'s game list only shows .cci files. Turn this off to keep games as .cia and install them with Install CIA. Updates and DLC are always .cia.</string>
+    <string name="strip_title_id_switch">Remove title ID from file names</string>
+    <string name="strip_title_id_hint">Drops the 16-digit title ID from the start of the name, so 0004000000051500_Game.cia is saved as Game-decrypted.cci.</string>
     <string name="after_label">After decrypting</string>
     <string name="delete_switch">Delete encrypted originals</string>
     <string name="delete_switch_hint">Deletes the original .3ds, .cci or .cia once its decrypted copy has been written. Files that fail to decrypt are kept.</string>

@@ -56,6 +56,16 @@
                 <TextView
                     style="@style/SettingHint"
                     android:text="@string/cci_switch_hint" />
+
+                <Switch
+                    android:id="@+id/strip_title_id_switch"
+                    style="@style/SettingSwitch"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/strip_title_id_switch" />
+
+                <TextView
+                    style="@style/SettingHint"
+                    android:text="@string/strip_title_id_hint" />
             </LinearLayout>
 
             <LinearLayout style="@style/Card">

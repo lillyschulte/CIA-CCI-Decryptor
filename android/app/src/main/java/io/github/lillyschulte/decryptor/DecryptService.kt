@@ -86,6 +86,7 @@ class DecryptService : Service() {
         val settings = Settings(this)
         val options = Decryptor.Options(
             gameCiaAsCci = settings.gameCiaAsCci,
+            stripTitleId = settings.stripTitleId,
             updateDir = settings.updateDir(dir),
         )
         val deleteOriginals = settings.deleteOriginals

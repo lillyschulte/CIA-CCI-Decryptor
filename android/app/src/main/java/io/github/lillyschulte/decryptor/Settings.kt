@@ -17,6 +17,11 @@ class Settings(context: Context) {
         get() = prefs.getBoolean("game_cia_as_cci", true)
         set(v) = prefs.edit().putBoolean("game_cia_as_cci", v).apply()
 
+    /** Strip a leading title ID ("0004000000051500_Game") from output file names */
+    var stripTitleId: Boolean
+        get() = prefs.getBoolean("strip_title_id", true)
+        set(v) = prefs.edit().putBoolean("strip_title_id", v).apply()
+
     /** Delete the encrypted original once its decrypted copy has been written */
     var deleteOriginals: Boolean
         get() = prefs.getBoolean("delete_originals", false)

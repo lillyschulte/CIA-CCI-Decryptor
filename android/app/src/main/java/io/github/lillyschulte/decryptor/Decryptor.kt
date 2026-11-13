@@ -15,6 +15,8 @@ class Decryptor(context: Context, private val listener: Listener, private val op
     data class Options(
         /** Rebuild game CIAs as CCI, since Azahar's game list only shows CCI/3DS files */
         val gameCiaAsCci: Boolean = true,
+        /** Remove a leading title ID ("0004000000051500_Game") from output names */
+        val stripTitleId: Boolean = true,
         /** Write decrypted updates and DLC here instead of next to the original (null = next to it) */
         val updateDir: File? = null,
     )
@@ -53,7 +55,9 @@ class Decryptor(context: Context, private val listener: Listener, private val op
         info.format == RomFormat.CCI || (options.gameCiaAsCci && info.kind == TitleKind.GAME)
 
     fun outputFile(rom: File, info: RomInfo): File {
-        val stem = rom.nameWithoutExtension
+        val stem = rom.nameWithoutExtension.let { name ->
+            if (options.stripTitleId) TITLE_ID_PREFIX.replace(name, "").ifEmpty { name } else name
+        }
         val name = when {
             buildsCci(info) -> "$stem-decrypted.cci"
             info.kind == TitleKind.UPDATE -> "$stem (Update)-decrypted.cia"
@@ -176,6 +180,8 @@ class Decryptor(context: Context, private val listener: Listener, private val op
 
     companion object {
         private val EXTENSIONS = setOf("3ds", "cci", "cia")
+        /** 16 hex digit title ID at the start of a name, plus the separator after it */
+        private val TITLE_ID_PREFIX = Regex("^[0-9A-Fa-f]{16}[ _.-]+")
 
         /** ROMs in [dir] (not recursive), skipping our own *-decrypted outputs */
         fun scan(dir: File): List<File> =

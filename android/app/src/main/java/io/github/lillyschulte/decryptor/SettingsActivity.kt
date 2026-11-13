@@ -29,6 +29,7 @@ class SettingsActivity : Activity() {
         findViewById<View>(R.id.back_button).setOnClickListener { finish() }
 
         bindSwitch(R.id.cci_switch, settings.gameCiaAsCci) { settings.gameCiaAsCci = it }
+        bindSwitch(R.id.strip_title_id_switch, settings.stripTitleId) { settings.stripTitleId = it }
         bindSwitch(R.id.delete_switch, settings.deleteOriginals) { settings.deleteOriginals = it }
         bindSwitch(R.id.sort_updates_switch, settings.sortUpdates) {
             settings.sortUpdates = it

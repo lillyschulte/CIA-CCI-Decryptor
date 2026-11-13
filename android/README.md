@@ -14,6 +14,7 @@ It runs the same pipeline as `decrypt.sh` on the device:
 * Saves games as `.cci` by default, so they show up in Azahar's game list (which ignores `.cia` files). Updates and DLC are always saved as `.cia`, since Azahar can only install them
 * Settings screen (gear button in the header):
   * **Save games as .cci**: on by default; turn off to keep games as `.cia`
+  * **Remove title ID from file names**: on by default; `0004000000051500_Game.cia` is saved as `Game-decrypted.cci`
   * **Delete encrypted originals**: off by default; deletes each original once its decrypted copy has been written. Files that fail are kept
   * **Sort updates and DLC into a folder**: off by default; saves decrypted updates and DLC to `Updates and DLC` inside the ROM folder, or a folder you choose
 * Shows the current file, its stage, and per-file and overall progress bars, plus a log
