@@ -1,7 +1,7 @@
-# Batch CIA CCI Decryptor (Linux)
-Batch decrypting for Nintendo 3DS games and applications (.3ds|.cci, .cia) on Linux.
+# Batch CIA CCI Decryptor (Linux & Android)
+Batch decrypting for Nintendo 3DS games and applications (.3ds|.cci, .cia) on Linux and Android.
 
-This is a Linux port of [rcyggdra/decryptor](https://github.com/rcyggdra/decryptor), which runs on Windows only. The Windows `.bat` scripts are replaced by a bash script, and all tools are built or downloaded as native Linux binaries.
+This is a Linux port of [rcyggdra/decryptor](https://github.com/rcyggdra/decryptor), which runs on Windows only. The Windows `.bat` scripts are replaced by a bash script, and all tools are built or downloaded as native Linux binaries. There is also an [Android app](#android-app) that does the same on the device itself.
 
 Azahar makes use of the `.cci` extension, which is the true name of the format used by `.3ds` files.
 
@@ -16,7 +16,23 @@ Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-ba
 * Auto detect CIA type (DLC/Patch/Game)
 * Skips files that are already decrypted or have `decrypted` in their name
 
-## Requirements
+## Android app
+A standalone app for arm64 Android devices (Android 11+), designed for handhelds like the AYN Thor. It decrypts ROMs directly on the device, no PC needed.
+
+**[Download the APK from the latest release](https://github.com/lillyschulte/decryptor/releases/latest)**
+
+1. Install the APK (allow installing from unknown sources when asked)
+2. Open **CIA CCI Decryptor** and tap **Allow access** to grant "All files access"
+3. Tap **Choose folder** and pick your 3DS ROM folder (internal storage or SD card); it is remembered for next time
+4. Tap **Decrypt all**
+
+The app shows the current file, a progress bar for that file and for the whole batch, and a log. It keeps running in the background with a progress notification and can be cancelled. Decrypted copies are written next to the originals with the same names as on Linux (see the [table below](#usage)); files that are already decrypted, or already have a decrypted copy, are skipped.
+
+The app source and build instructions are on the [`android` branch](https://github.com/lillyschulte/decryptor/tree/android/android).
+
+## Linux
+
+### Requirements
 * Linux x86_64
 * Rust/cargo, `curl` and `unzip`
 
@@ -27,7 +43,7 @@ sudo apt install cargo unzip      # Debian/Ubuntu
 sudo pacman -S rust unzip         # Arch
 ```
 
-## Setup
+### Setup
 ```
 git clone https://github.com/lillyschulte/decryptor
 cd decryptor
@@ -35,7 +51,7 @@ cd decryptor
 ```
 `setup.sh` builds `ctrdecrypt` and `dlchelper` into `bin/` and downloads the Linux builds of `ctrtool` and `makerom` from [Project_CTR](https://github.com/3DSGuy/Project_CTR/releases). Existing `ctrtool`/`makerom` binaries in `bin/` are kept; delete them to download again. If they are not in `bin/`, the tools are also looked up on your `PATH`.
 
-## Usage
+### Usage
 Copy your CIA, 3DS or CCI files into the folder containing `decrypt.sh` and run:
 ```
 ./decrypt.sh
@@ -54,7 +70,7 @@ Output files are written next to the originals:
 | Update CIA | `Game (Update)-decrypted.cia` |
 | DLC CIA | `Game (DLC)-decrypted.cia` |
 
-### Debug mode
+#### Debug mode
 ```
 ./decrypt.sh --debug
 ```
