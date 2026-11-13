@@ -234,9 +234,14 @@ fn dump_section(ncch: &mut File, cia: &mut CiaReader, offset: u64, size: u32, se
 fn get_new_key(key_y: u128, header: &NcchHdr, titleid: String) -> u128 {
     let mut new_key: u128 = 0;
     let mut seeds: HashMap<String, [u8; 16]> = HashMap::new();
-    let db_path = Path::new("seeddb.bin");
-
-    let seeddb = File::open(db_path);
+    // Look for seeddb.bin in the current directory first, then next to the executable
+    let seeddb = File::open("seeddb.bin").or_else(|e| {
+        std::env::current_exe()
+            .ok()
+            .and_then(|exe| exe.parent().map(|d| d.join("seeddb.bin")))
+            .map(File::open)
+            .unwrap_or(Err(e))
+    });
     let mut cbuffer: [u8; 4] = [0; 4];
     let mut kbuffer: [u8; 8] = [0; 8];
     let mut sbuffer: [u8; 16] = [0; 16];
@@ -371,13 +376,8 @@ fn parse_ncch(cia: &mut CiaReader, offs: u64, mut titleid: [u8; 8]) {
 
     let mut base: String;
     let path = Path::new(&cia.name);
-    let file_name = path.file_name().unwrap().to_string_lossy();
-
-    if cia.single_ncch || cia.from_ncsd {
-        base = file_name.strip_suffix(".3ds").unwrap().to_string();
-    } else {
-        base = file_name.strip_suffix(".cia").unwrap().to_string();
-    }
+    // Strip the last extension (.3ds/.cci/.cia, any case) instead of assuming a fixed one
+    base = path.file_stem().unwrap().to_string_lossy().to_string();
 
     let absolute_path = canonicalize(&path).unwrap();
     let final_path = if cfg!(windows) && absolute_path.to_string_lossy().starts_with(r"\\?\") {
@@ -564,7 +564,7 @@ fn main() {
         Err(_) => ()
     }
 
-    if args[1].ends_with(".cia") {
+    if args[1].to_lowercase().ends_with(".cia") {
         let mut check: [u8; 4] = [0; 4];
         rom.read_exact(&mut check).unwrap();
 

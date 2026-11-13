@@ -39,7 +39,14 @@ fn process_ncch_files(file_stem: Option<&str>, version: &str) -> Result<(), Box<
             let output_file = format!("{} (DLC)-decrypted.cia", p);
 
             // Build args and run makerom
-            let mut command = Command::new("makerom.exe");
+            // Prefer makerom next to this executable, otherwise fall back to PATH
+            let makerom_name = if cfg!(windows) { "makerom.exe" } else { "makerom" };
+            let makerom = env::current_exe()
+                .ok()
+                .and_then(|exe| exe.parent().map(|d| d.join(makerom_name)))
+                .filter(|p| p.is_file())
+                .unwrap_or_else(|| makerom_name.into());
+            let mut command = Command::new(makerom);
             command.args(&[
                 "-f", "cia",
                 "-dlc",

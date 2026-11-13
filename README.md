@@ -13,13 +13,20 @@ Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-ba
 * CIA Games > Decrypted CCI (NCSD), not CXI (NCCH)
 * Auto dectect CIA type (DLC/Patch/Game)
 
+## Setup (Linux)
+Requires Rust/cargo (`sudo dnf install cargo` or https://rustup.rs), `curl` and `unzip`.
+```
+./setup.sh
+```
+This builds `ctrdecrypt` and `dlchelper` into `bin/` and downloads the Linux builds of `ctrtool` and `makerom` from Project_CTR.
+
 ## Usage
-* Copy CIA or 3DS files into the root directory containing the batch
-* Run "Batch CIA CCI Decryptor.bat"
-* Run "Batch CIA CCI Decryptor [Debug].bat" will show command and output logfile，without checking whether the files are encrypted
+* Copy CIA or 3DS/CCI files into the directory containing `decrypt.sh` (or pass a directory as an argument)
+* Run `./decrypt.sh`
+* Run `./decrypt.sh --debug` to show commands and output and write a `log.txt`, without checking whether the files are already encrypted
 
 ## Supported operating systems
-* Windows 10 x64 or higher
+* Linux x86_64
 
 ## Credits
 * `Batch CIA 3DS Decryptor` - [matiffeder](https://github.com/matiffeder/3DS-stuff)
