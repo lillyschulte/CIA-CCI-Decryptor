@@ -1,6 +1,7 @@
 package io.github.lillyschulte.decryptor
 
 import android.content.Context
+import android.os.SystemClock
 import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
@@ -55,15 +56,21 @@ class Decryptor(context: Context, private val listener: Listener) {
     fun decrypt(rom: File, info: RomInfo): Boolean {
         val dir = rom.absoluteFile.parentFile!!
         val out = outputFile(rom, info)
+        // makerom writes here; renamed to `out` only on success so a killed run never
+        // leaves a truncated "-decrypted" file that later runs would skip
+        val partial = File(dir, out.name + ".part")
         // ctrdecrypt names its output <stem>.<partition>.<content id as 8 hex digits>.ncch
         val pattern = Regex("^" + Regex.escape(rom.nameWithoutExtension) + "\\.([^.]+)\\.([0-9A-Fa-f]{8})\\.ncch$")
         fun parts() = dir.listFiles { f -> pattern.matches(f.name) }?.sortedBy { it.name }.orEmpty()
         val payload = info.payloadSize.coerceAtLeast(1).toFloat()
 
+        // Clean up leftovers from an earlier run that was killed
         parts().forEach { it.delete() }
+        partial.delete()
         var success = false
         try {
             listener.stage("Decrypting")
+            val decryptStart = SystemClock.elapsedRealtime()
             val decrypted = run(listOf(ctrdecrypt.path, rom.absolutePath, "--no-verbose")) {
                 parts().sumOf { it.length() } / payload * 0.5f
             }
@@ -76,7 +83,7 @@ class Decryptor(context: Context, private val listener: Listener) {
 
             val args = mutableListOf(makerom.path, "-f", if (info.format == RomFormat.CCI) "cci" else "cia")
             if (info.format == RomFormat.CIA && info.kind == TitleKind.DLC) args += "-dlc"
-            args += listOf("-ignoresign", "-target", "p", "-o", out.absolutePath)
+            args += listOf("-ignoresign", "-target", "p", "-o", partial.absolutePath)
             for (p in ncch) {
                 val (part, hexId) = pattern.matchEntire(p.name)!!.destructured
                 val contentId = hexId.toLong(16)
@@ -93,14 +100,27 @@ class Decryptor(context: Context, private val listener: Listener) {
             if (info.format == RomFormat.CIA) args += listOf("-ver", info.version.toString())
 
             listener.stage(if (info.format == RomFormat.CCI) "Building CCI" else "Building CIA")
+            // makerom builds the whole file in memory and writes it at the end, so the output size
+            // can't show progress. Estimate from time instead: on the Thor, building takes ~1.25x
+            // as long as decrypting the same ROM.
+            val buildStart = SystemClock.elapsedRealtime()
+            val expectedBuildMs = ((buildStart - decryptStart) * 1.25f).coerceAtLeast(1000f)
+            val built = run(args) {
+                val estimate = (SystemClock.elapsedRealtime() - buildStart) / expectedBuildMs
+                0.5f + 0.5f * estimate.coerceAtMost(0.95f)
+            }
+            if (!built) return false
+            if (!partial.isFile || partial.length() == 0L) {
+                listener.log("makerom did not write ${out.name}")
+                return false
+            }
             out.delete()
-            val built = run(args) { 0.5f + out.length() / payload * 0.5f }
-            success = built && out.isFile && out.length() > 0
-            if (built && !success) listener.log("makerom did not write ${out.name}")
+            success = partial.renameTo(out)
+            if (!success) listener.log("Could not rename ${partial.name} to ${out.name}")
             return success
         } finally {
             parts().forEach { it.delete() }
-            if (!success) out.delete()
+            partial.delete()
         }
     }
 
@@ -110,9 +130,16 @@ class Decryptor(context: Context, private val listener: Listener) {
         val process = ProcessBuilder(cmd).directory(workDir).redirectErrorStream(true).start()
         current = process
         val reader = thread(name = "tool-output") {
-            process.inputStream.bufferedReader().forEachLine { line ->
-                // makerom always warns that it can't sign without Nintendo's keys; that's expected
-                if (line.isNotBlank() && "Failed to sign header" !in line) listener.log("  $line")
+            try {
+                process.inputStream.bufferedReader().forEachLine { line ->
+                    // Skip expected noise: makerom can't sign without Nintendo's keys, and
+                    // ctrdecrypt prints the path of every temporary .ncch it writes
+                    if (line.isNotBlank() && "Failed to sign header" !in line && !line.endsWith(".ncch")) {
+                        listener.log("  $line")
+                    }
+                }
+            } catch (_: java.io.IOException) {
+                // Cancelling destroys the process, which closes this stream mid-read
             }
         }
         while (!process.waitFor(250, TimeUnit.MILLISECONDS)) {

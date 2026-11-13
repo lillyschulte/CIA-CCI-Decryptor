@@ -137,12 +137,25 @@ class MainActivity : Activity() {
         return if (relative.isEmpty()) root else "$root/$relative"
     }
 
+    /** "/storage/emulated/0/Roms" -> "Internal storage/Roms", "/storage/9C33-6BBD/Roms" -> "SD card/Roms" */
+    private fun displayPath(folder: File): String {
+        val internal = Environment.getExternalStorageDirectory().path
+        val path = folder.path
+        return when {
+            path == internal || path.startsWith("$internal/") ->
+                getString(R.string.internal_storage) + path.removePrefix(internal)
+            path.startsWith("/storage/") ->
+                getString(R.string.sd_card) + "/" + path.removePrefix("/storage/").substringAfter('/', "")
+            else -> path
+        }.removeSuffix("/")
+    }
+
     private fun selectedFolder(): File? = prefs.getString(PREF_FOLDER, null)?.let(::File)
 
     private fun refreshFolder() {
         permissionCard.visibility = if (hasFileAccess()) View.GONE else View.VISIBLE
         val folder = selectedFolder()
-        folderPath.text = folder?.path ?: getString(R.string.no_folder)
+        folderPath.text = folder?.let(::displayPath) ?: getString(R.string.no_folder)
 
         romSummary.text = when {
             folder == null -> getString(R.string.pick_folder_hint)

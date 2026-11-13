@@ -11,6 +11,8 @@
     <string name="folder_label">ROM folder</string>
     <string name="choose_folder">Choose folder</string>
     <string name="no_folder">No folder selected</string>
+    <string name="internal_storage">Internal storage</string>
+    <string name="sd_card">SD card</string>
     <string name="pick_folder_hint">Pick the folder that contains your ROMs.</string>
     <string name="need_access_hint">Allow file access to see the ROMs in this folder.</string>
     <string name="folder_missing">This folder no longer exists. Choose another one.</string>
