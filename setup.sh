@@ -3,7 +3,8 @@
 set -euo pipefail
 
 CTRTOOL_VER=1.3.0
-MAKEROM_VER=0.19.0
+# makerom v0.19.0 ignores -ver and writes title version 0, so stay on v0.18.4
+MAKEROM_VER=0.18.4
 BASE_URL=https://github.com/3DSGuy/Project_CTR/releases/download
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
