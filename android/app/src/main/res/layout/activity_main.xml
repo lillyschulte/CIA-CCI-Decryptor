@@ -8,6 +8,8 @@
 
     <include layout="@layout/controls" />
 
+    <include layout="@layout/progress_card" />
+
     <include
         layout="@layout/log_panel"
         android:layout_width="match_parent"
