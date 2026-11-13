@@ -19,16 +19,13 @@ class DecryptService : Service() {
 
     companion object {
         private const val EXTRA_FOLDER = "folder"
-        private const val EXTRA_GAME_CIA_AS_CCI = "game_cia_as_cci"
         private const val ACTION_CANCEL = "cancel"
         private const val CHANNEL = "progress"
         private const val NOTIFICATION_ID = 1
 
-        fun start(context: Context, folder: String, gameCiaAsCci: Boolean) {
+        fun start(context: Context, folder: String) {
             context.startForegroundService(
-                Intent(context, DecryptService::class.java)
-                    .putExtra(EXTRA_FOLDER, folder)
-                    .putExtra(EXTRA_GAME_CIA_AS_CCI, gameCiaAsCci)
+                Intent(context, DecryptService::class.java).putExtra(EXTRA_FOLDER, folder)
             )
         }
 
@@ -53,7 +50,6 @@ class DecryptService : Service() {
             return START_NOT_STICKY
         }
         val folder = intent?.getStringExtra(EXTRA_FOLDER)
-        val gameCiaAsCci = intent?.getBooleanExtra(EXTRA_GAME_CIA_AS_CCI, true) ?: true
         createChannel()
         startForeground(NOTIFICATION_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         if (JobState.running || folder == null) return START_NOT_STICKY
@@ -67,7 +63,7 @@ class DecryptService : Service() {
 
         thread(name = "decrypt-batch") {
             try {
-                runBatch(File(folder), gameCiaAsCci)
+                runBatch(File(folder))
             } catch (e: Exception) {
                 JobState.log("Error: ${e.message ?: e.javaClass.simpleName}")
                 JobState.summary = "Stopped because of an error"
@@ -85,7 +81,14 @@ class DecryptService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun runBatch(dir: File, gameCiaAsCci: Boolean) {
+    private fun runBatch(dir: File) {
+        // Read once, so changing settings mid-batch doesn't mix behaviours
+        val settings = Settings(this)
+        val options = Decryptor.Options(
+            gameCiaAsCci = settings.gameCiaAsCci,
+            updateDir = settings.updateDir(dir),
+        )
+        val deleteOriginals = settings.deleteOriginals
         val d = Decryptor(this, object : Decryptor.Listener {
             override fun log(line: String) = JobState.log(line)
             override fun stage(text: String) {
@@ -99,10 +102,12 @@ class DecryptService : Service() {
                 JobState.changed()
                 updateNotification()
             }
-        }, gameCiaAsCci)
+        }, options)
         decryptor = d
 
         JobState.log("Folder: ${dir.path}")
+        options.updateDir?.let { JobState.log("Updates go to: ${it.path}") }
+        if (deleteOriginals) JobState.log("Encrypted originals are deleted after decrypting")
         val roms = Decryptor.scan(dir)
         if (roms.isEmpty()) {
             JobState.summary = "No .3ds, .cci or .cia files found"
@@ -138,6 +143,7 @@ class DecryptService : Service() {
         doneBytes = 0L
         var ok = 0
         var failed = 0
+        var deleted = 0
         JobState.fileCount = tasks.size
 
         for ((i, task) in tasks.withIndex()) {
@@ -161,6 +167,12 @@ class DecryptService : Service() {
                 success -> {
                     ok++
                     JobState.log("Done in ${secs}s: ${d.outputFile(rom, info).name}")
+                    if (deleteOriginals) {
+                        if (rom.delete()) {
+                            deleted++
+                            JobState.log("Deleted ${rom.name}")
+                        } else JobState.log("Could not delete ${rom.name}")
+                    }
                 }
                 d.isCancelled -> JobState.log("Cancelled")
                 else -> {
@@ -176,6 +188,7 @@ class DecryptService : Service() {
             append("$ok decrypted")
             if (failed > 0) append(", $failed failed")
             if (skipped > 0) append(", $skipped skipped")
+            if (deleted > 0) append(", $deleted originals deleted")
         }
         JobState.log("")
         JobState.log(JobState.summary)

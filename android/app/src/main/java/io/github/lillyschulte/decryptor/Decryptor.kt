@@ -10,12 +10,14 @@ import kotlin.concurrent.thread
  * Port of decrypt.sh for a single ROM: run ctrdecrypt to produce decrypted .ncch
  * partitions next to the ROM, then makerom to rebuild them into a CCI/CIA.
  */
-class Decryptor(
-    context: Context,
-    private val listener: Listener,
-    /** Rebuild game CIAs as CCI, since Azahar's game list only shows CCI/3DS files */
-    private val gameCiaAsCci: Boolean = true,
-) {
+class Decryptor(context: Context, private val listener: Listener, private val options: Options = Options()) {
+
+    data class Options(
+        /** Rebuild game CIAs as CCI, since Azahar's game list only shows CCI/3DS files */
+        val gameCiaAsCci: Boolean = true,
+        /** Write decrypted updates here instead of next to the original (null = next to it) */
+        val updateDir: File? = null,
+    )
 
     interface Listener {
         fun log(line: String)
@@ -48,7 +50,7 @@ class Decryptor(
 
     /** Whether the output is a CCI. Updates and DLC stay CIA: Azahar can only install those. */
     fun buildsCci(info: RomInfo) =
-        info.format == RomFormat.CCI || (gameCiaAsCci && info.kind == TitleKind.GAME)
+        info.format == RomFormat.CCI || (options.gameCiaAsCci && info.kind == TitleKind.GAME)
 
     fun outputFile(rom: File, info: RomInfo): File {
         val stem = rom.nameWithoutExtension
@@ -58,7 +60,10 @@ class Decryptor(
             info.kind == TitleKind.DLC -> "$stem (DLC)-decrypted.cia"
             else -> "$stem-decrypted.cia"
         }
-        return File(rom.absoluteFile.parentFile, name)
+        val dir = if (info.format == RomFormat.CIA && info.kind == TitleKind.UPDATE && options.updateDir != null)
+            options.updateDir
+        else rom.absoluteFile.parentFile
+        return File(dir, name)
     }
 
     /** Returns true if the decrypted output was written. */
@@ -67,7 +72,7 @@ class Decryptor(
         val out = outputFile(rom, info)
         // makerom writes here; renamed to `out` only on success so a killed run never
         // leaves a truncated "-decrypted" file that later runs would skip
-        val partial = File(dir, out.name + ".part")
+        val partial = File(out.parentFile, out.name + ".part")
         // ctrdecrypt names its output <stem>.<partition>.<content id as 8 hex digits>.ncch
         val pattern = Regex("^" + Regex.escape(rom.nameWithoutExtension) + "\\.([^.]+)\\.([0-9A-Fa-f]{8})\\.ncch$")
         fun parts() = dir.listFiles { f -> pattern.matches(f.name) }?.sortedBy { it.name }.orEmpty()
@@ -78,6 +83,10 @@ class Decryptor(
         partial.delete()
         var success = false
         try {
+            if (!out.parentFile!!.isDirectory && !out.parentFile!!.mkdirs()) {
+                listener.log("Could not create folder ${out.parentFile!!.path}")
+                return false
+            }
             listener.stage("Decrypting")
             val decryptStart = SystemClock.elapsedRealtime()
             val decrypted = run(listOf(ctrdecrypt.path, rom.absolutePath, "--no-verbose")) {

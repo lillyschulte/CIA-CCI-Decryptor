@@ -4,20 +4,40 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/app_name"
-        android:textColor="@color/text"
-        android:textSize="24sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:text="@string/subtitle"
-        android:textColor="@color/text_dim" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/app_name"
+                android:textColor="@color/text"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/subtitle"
+                android:textColor="@color/text_dim" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/settings_button"
+            style="@style/IconButton"
+            android:contentDescription="@string/settings"
+            android:src="@drawable/ic_settings" />
+    </LinearLayout>
 
     <!-- Shown until "All files access" is granted -->
     <LinearLayout
@@ -86,31 +106,6 @@
             android:layout_marginTop="10dp"
             android:maxLines="8"
             android:ellipsize="end"
-            android:textColor="@color/text_dim" />
-    </LinearLayout>
-
-    <LinearLayout style="@style/Card">
-
-        <TextView
-            style="@style/Label"
-            android:text="@string/output_label" />
-
-        <Switch
-            android:id="@+id/cci_switch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:text="@string/cci_switch"
-            android:textColor="@color/text"
-            android:textSize="16sp"
-            android:thumbTint="@color/switch_thumb"
-            android:trackTint="@color/switch_track" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="@string/cci_switch_hint"
             android:textColor="@color/text_dim" />
     </LinearLayout>
 

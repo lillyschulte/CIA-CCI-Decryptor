@@ -63,4 +63,29 @@
         <item name="android:textColor">@color/text</item>
         <item name="android:fontFeatureSettings">tnum</item>
     </style>
+
+    <style name="IconButton">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:background">?android:attr/selectableItemBackgroundBorderless</item>
+    </style>
+
+    <style name="SettingSwitch">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:textColor">@color/text</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:thumbTint">@color/switch_thumb</item>
+        <item name="android:trackTint">@color/switch_track</item>
+    </style>
+
+    <style name="SettingHint">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:textColor">@color/text_dim</item>
+    </style>
 </resources>

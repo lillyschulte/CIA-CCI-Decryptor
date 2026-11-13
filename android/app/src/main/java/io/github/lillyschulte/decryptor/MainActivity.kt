@@ -8,14 +8,12 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.provider.DocumentsContract
 import android.provider.Settings
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.ScrollView
-import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import java.io.File
@@ -25,18 +23,15 @@ class MainActivity : Activity() {
 
     companion object {
         private const val REQUEST_FOLDER = 1
-        private const val PREF_FOLDER = "rom_folder"
-        private const val PREF_GAME_CIA_AS_CCI = "game_cia_as_cci"
     }
 
-    private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
+    private val settings by lazy { Settings(this) }
 
     private lateinit var permissionCard: View
     private lateinit var folderPath: TextView
     private lateinit var romSummary: TextView
     private lateinit var decryptButton: Button
     private lateinit var cancelButton: Button
-    private lateinit var cciSwitch: Switch
     private lateinit var currentFile: TextView
     private lateinit var stage: TextView
     private lateinit var fileProgress: ProgressBar
@@ -59,7 +54,6 @@ class MainActivity : Activity() {
         romSummary = findViewById(R.id.rom_summary)
         decryptButton = findViewById(R.id.decrypt_button)
         cancelButton = findViewById(R.id.cancel_button)
-        cciSwitch = findViewById(R.id.cci_switch)
         currentFile = findViewById(R.id.current_file)
         stage = findViewById(R.id.stage)
         fileProgress = findViewById(R.id.file_progress)
@@ -73,9 +67,8 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.folder_button).setOnClickListener { pickFolder() }
         decryptButton.setOnClickListener { startBatch() }
         cancelButton.setOnClickListener { DecryptService.cancel(this) }
-        cciSwitch.isChecked = prefs.getBoolean(PREF_GAME_CIA_AS_CCI, true)
-        cciSwitch.setOnCheckedChangeListener { _, checked ->
-            prefs.edit().putBoolean(PREF_GAME_CIA_AS_CCI, checked).apply()
+        findViewById<View>(R.id.settings_button).setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
 
         if (Build.VERSION.SDK_INT >= 33 &&
@@ -120,50 +113,21 @@ class MainActivity : Activity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode != REQUEST_FOLDER || resultCode != RESULT_OK) return
-        val path = data?.data?.let { treeUriToPath(it) }
+        val path = data?.data?.let { Folders.treeUriToPath(it) }
         if (path == null) {
             Toast.makeText(this, R.string.unsupported_folder, Toast.LENGTH_LONG).show()
             return
         }
-        prefs.edit().putString(PREF_FOLDER, path).apply()
+        settings.romFolder = path
         refreshFolder()
     }
 
-    /** Converts a folder picked in the system file picker to a real filesystem path. */
-    private fun treeUriToPath(uri: Uri): String? {
-        val docId = DocumentsContract.getTreeDocumentId(uri)
-        if (docId.startsWith("raw:")) return docId.removePrefix("raw:")
-        if (uri.authority != "com.android.externalstorage.documents") return null
-        val volume = docId.substringBefore(':')
-        val relative = docId.substringAfter(':', "")
-        val root = when {
-            volume.equals("primary", ignoreCase = true) -> Environment.getExternalStorageDirectory().path
-            volume.equals("home", ignoreCase = true) ->
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS).path
-            else -> "/storage/$volume" // SD card / USB drive
-        }
-        return if (relative.isEmpty()) root else "$root/$relative"
-    }
-
-    /** "/storage/emulated/0/Roms" -> "Internal storage/Roms", "/storage/9C33-6BBD/Roms" -> "SD card/Roms" */
-    private fun displayPath(folder: File): String {
-        val internal = Environment.getExternalStorageDirectory().path
-        val path = folder.path
-        return when {
-            path == internal || path.startsWith("$internal/") ->
-                getString(R.string.internal_storage) + path.removePrefix(internal)
-            path.startsWith("/storage/") ->
-                getString(R.string.sd_card) + "/" + path.removePrefix("/storage/").substringAfter('/', "")
-            else -> path
-        }.removeSuffix("/")
-    }
-
-    private fun selectedFolder(): File? = prefs.getString(PREF_FOLDER, null)?.let(::File)
+    private fun selectedFolder(): File? = settings.romFolder?.let(::File)
 
     private fun refreshFolder() {
         permissionCard.visibility = if (hasFileAccess()) View.GONE else View.VISIBLE
         val folder = selectedFolder()
-        folderPath.text = folder?.let(::displayPath) ?: getString(R.string.no_folder)
+        folderPath.text = folder?.let { Folders.display(this, it) } ?: getString(R.string.no_folder)
 
         romSummary.text = when {
             folder == null -> getString(R.string.pick_folder_hint)
@@ -182,7 +146,7 @@ class MainActivity : Activity() {
     private fun startBatch() {
         val folder = selectedFolder() ?: return pickFolder()
         if (!hasFileAccess()) return requestAllFilesAccess()
-        DecryptService.start(this, folder.path, cciSwitch.isChecked)
+        DecryptService.start(this, folder.path)
     }
 
     private fun render() {
@@ -191,7 +155,6 @@ class MainActivity : Activity() {
 
         decryptButton.isEnabled = !running && folder != null && hasFileAccess() && folder.isDirectory
         cancelButton.visibility = if (running) View.VISIBLE else View.GONE
-        cciSwitch.isEnabled = !running
         if (running) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 

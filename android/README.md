@@ -11,7 +11,11 @@ It runs the same pipeline as `decrypt.sh` on the device:
 ## Features
 * Choose a ROM folder on internal storage or an SD card (remembered between launches)
 * Decrypts every `.3ds`, `.cci` and `.cia` in the folder, skipping ones that are already decrypted or already have a `-decrypted` copy
-* Saves games as `.cci` by default, so they show up in Azahar's game list (which ignores `.cia` files). This can be switched off to keep games as `.cia`. Updates and DLC are always saved as `.cia`, since Azahar can only install them
+* Saves games as `.cci` by default, so they show up in Azahar's game list (which ignores `.cia` files). Updates and DLC are always saved as `.cia`, since Azahar can only install them
+* Settings screen (gear button in the header):
+  * **Save games as .cci**: on by default; turn off to keep games as `.cia`
+  * **Delete encrypted originals**: off by default; deletes each original once its decrypted copy has been written. Files that fail are kept
+  * **Sort updates into a folder**: off by default; saves decrypted updates to `Updates` inside the ROM folder, or a folder you choose
 * Shows the current file, its stage, and per-file and overall progress bars, plus a log
 * Keeps running in the background with a progress notification (can be cancelled)
 

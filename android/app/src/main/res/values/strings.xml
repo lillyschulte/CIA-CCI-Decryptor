@@ -23,9 +23,19 @@
         <item quantity="other">%d ROMs found</item>
     </plurals>
 
+    <string name="settings">Settings</string>
+    <string name="back">Back</string>
     <string name="output_label">Output</string>
     <string name="cci_switch">Save games as .cci</string>
     <string name="cci_switch_hint">Azahar\'s game list only shows .cci files. Turn this off to keep games as .cia and install them with Install CIA. Updates and DLC are always .cia.</string>
+    <string name="after_label">After decrypting</string>
+    <string name="delete_switch">Delete encrypted originals</string>
+    <string name="delete_switch_hint">Deletes the original .3ds, .cci or .cia once its decrypted copy has been written. Files that fail to decrypt are kept.</string>
+    <string name="updates_label">Updates</string>
+    <string name="sort_updates_switch">Sort updates into a folder</string>
+    <string name="sort_updates_hint">Saves decrypted update CIAs to a separate folder instead of next to the original.</string>
+    <string name="update_folder_default">\"%1$s\" inside the ROM folder</string>
+    <string name="use_default">Use default</string>
 
     <string name="decrypt">Decrypt all</string>
     <string name="cancel">Cancel</string>
