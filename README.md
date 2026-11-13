@@ -30,7 +30,7 @@ sudo pacman -S rust unzip         # Arch
 ## Setup
 ```
 git clone https://github.com/lillyschulte/CIA-CCI-Decryptor
-cd decryptor
+cd CIA-CCI-Decryptor
 ./setup.sh
 ```
 `setup.sh` builds `ctrdecrypt` and `dlchelper` into `bin/` and downloads the Linux builds of `ctrtool` and `makerom` from [Project_CTR](https://github.com/3DSGuy/Project_CTR/releases). Existing `ctrtool`/`makerom` binaries in `bin/` are kept; delete them to download again. If they are not in `bin/`, the tools are also looked up on your `PATH`.
