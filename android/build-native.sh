@@ -53,6 +53,9 @@ echo "Building makerom..."
 )
 install -m 755 "$WORK/Project_CTR/makerom/bin/makerom" "$OUT/libmakerom.so"
 
+# Gradle can't strip these executables itself, so strip them here to keep the APK small
+"$TC/llvm-strip" "$OUT"/*.so
+
 # ---- seeddb.bin ----
 mkdir -p "$HERE/app/src/main/assets"
 cp "$ROOT/bin/seeddb.bin" "$HERE/app/src/main/assets/seeddb.bin"

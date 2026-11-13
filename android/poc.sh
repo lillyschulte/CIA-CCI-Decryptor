@@ -13,6 +13,9 @@ ROM="${1:?usage: $0 <rom>}"
 FILE="$(basename "$ROM")"
 NAME="${FILE%.*}"
 EXT="${FILE##*.}"; EXT="${EXT,,}"
+# Use a neutral name on the device so quotes/spaces in ROM names can't break adb shell quoting
+DNAME=rom
+DFILE="$DNAME.$EXT"
 
 [[ -f "$LIBS/libctrdecrypt.so" && -f "$LIBS/libmakerom.so" ]] || { echo "Run android/build-native.sh first" >&2; exit 1; }
 adb get-state >/dev/null || { echo "No device connected" >&2; exit 1; }
@@ -23,13 +26,13 @@ adb push "$LIBS/libctrdecrypt.so" $DEV/ctrdecrypt >/dev/null
 adb push "$LIBS/libmakerom.so" $DEV/makerom >/dev/null
 adb push "$ROOT/bin/seeddb.bin" $DEV/ >/dev/null
 echo "Pushing $FILE..."
-adb push "$ROM" "$DEV/$FILE" >/dev/null
+adb push "$ROM" "$DEV/$DFILE" >/dev/null
 adb shell "chmod 755 $DEV/ctrdecrypt $DEV/makerom"
 
 echo "== ctrdecrypt"
-time adb shell "cd $DEV && ./ctrdecrypt '$FILE'"
+time adb shell "cd $DEV && ./ctrdecrypt $DFILE"
 
-mapfile -t NCCH < <(adb shell "cd $DEV && ls -1 '$NAME'.*.ncch" | tr -d '\r')
+mapfile -t NCCH < <(adb shell "cd $DEV && ls -1 $DNAME.*.ncch" | tr -d '\r')
 (( ${#NCCH[@]} )) || { echo "ctrdecrypt produced no .ncch files" >&2; exit 1; }
 printf '  %s\n' "${NCCH[@]}"
 
@@ -38,7 +41,7 @@ VER=$(grep 'TitleVersion' <<<"$INFO" | tail -n1 | sed -n 's/.*(v\{0,1\}\([0-9]*\
 
 ARGS=()
 if [[ "$EXT" != cia ]]; then
-    for f in "${NCCH[@]}"; do s="${f%.ncch}"; i=$((16#${s##*.})); ARGS+=(-i "'$f:$i:$i'"); done
+    for f in "${NCCH[@]}"; do s="${f%.ncch}"; i=$((16#${s##*.})); ARGS+=(-i "$f:$i:$i"); done
     OUTF="$NAME-decrypted.cci"; MR="-f cci"
 else
     if   grep -Eq '^T.*d.*0004000e' <<<"$INFO"; then KIND=update; OUTF="$NAME (Update)-decrypted.cia"; MR="-f cia"
@@ -46,16 +49,16 @@ else
     else                                               KIND=game;   OUTF="$NAME-decrypted.cia";          MR="-f cia"; fi
     for f in "${NCCH[@]}"; do
         s="${f%.ncch}"; id=$((16#${s##*.})); s="${s%.*}"; i="${s##*.}"
-        [[ $KIND == game ]] && ARGS+=(-i "'$f:$i:$i'") || ARGS+=(-i "'$f:$i:$id'")
+        [[ $KIND == game ]] && ARGS+=(-i "$f:$i:$i") || ARGS+=(-i "$f:$i:$id")
     done
     MR="$MR -ver $VER"
 fi
 
 echo "== makerom"
-time adb shell "cd $DEV && ./makerom $MR -ignoresign -target p -o '$OUTF' ${ARGS[*]}"
+time adb shell "cd $DEV && ./makerom $MR -ignoresign -target p -o out.$EXT ${ARGS[*]}"
 
 mkdir -p "$HERE/build/poc"
-adb pull "$DEV/$OUTF" "$HERE/build/poc/" >/dev/null
+adb pull "$DEV/out.$EXT" "$HERE/build/poc/$OUTF" >/dev/null
 adb shell "rm -rf $DEV"
 echo "== Result: $HERE/build/poc/$OUTF"
 "$ROOT/bin/ctrtool" "$HERE/build/poc/$OUTF" 2>/dev/null | grep -E 'Title id|TitleVersion|Crypto Key' | sort -u
