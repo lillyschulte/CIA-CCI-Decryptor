@@ -18,3 +18,12 @@ target/
 # Linux tool binaries (built/downloaded by setup.sh)
 bin/*
 !bin/seeddb.bin
+
+# ROMs and temporary files
+*.3ds
+*.cci
+*.cia
+*.ncch
+*.cxi
+content.txt
+log.txt

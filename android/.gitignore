@@ -1,0 +1,7 @@
+.gradle/
+build/
+app/build/
+local.properties
+# Produced by build-native.sh
+app/src/main/jniLibs/
+app/src/main/assets/seeddb.bin

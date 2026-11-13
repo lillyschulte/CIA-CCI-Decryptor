@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#FF12161C</color>
+    <color name="surface">#FF1E252E</color>
+    <color name="surface_line">#FF2E3846</color>
+    <color name="accent">#FFF5A524</color>
+    <color name="accent_dark">#FF1A1205</color>
+    <color name="text">#FFE6E9ED</color>
+    <color name="text_dim">#FF9AA4B2</color>
+    <color name="disabled">#FF353E4B</color>
+    <color name="danger">#FFE5484D</color>
+    <color name="icon_bg">#FF1F2933</color>
+    <color name="icon_cart">#FFE4E7EB</color>
+</resources>

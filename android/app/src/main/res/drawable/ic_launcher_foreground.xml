@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Game cartridge with an unlocked padlock -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Cartridge with a clipped corner -->
+    <path android:fillColor="@color/icon_cart"
+        android:pathData="M35,25h31l9,9v48a4,4 0,0 1,-4 4h-36a4,4 0,0 1,-4 -4v-53a4,4 0,0 1,4 -4z" />
+    <!-- Label recess -->
+    <path android:fillColor="#FFB8C0CA"
+        android:pathData="M38,31h24a2,2 0,0 1,2 2v10a2,2 0,0 1,-2 2h-24a2,2 0,0 1,-2 -2v-10a2,2 0,0 1,2 -2z" />
+    <!-- Open shackle: left leg in the lock body, right leg lifted out -->
+    <path android:strokeColor="@color/accent" android:strokeWidth="4.5" android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M46,58V51a7,7 0,0 1,14 0V53" />
+    <!-- Lock body -->
+    <path android:fillColor="@color/accent"
+        android:pathData="M42,58h24a3,3 0,0 1,3 3v15a3,3 0,0 1,-3 3h-24a3,3 0,0 1,-3 -3v-15a3,3 0,0 1,3 -3z" />
+    <!-- Keyhole -->
+    <path android:fillColor="@color/icon_bg"
+        android:pathData="M54,64.5a2.75,2.75 0,1 1,0 5.5a2.75,2.75 0,1 1,0 -5.5zM52.8,69h2.4l0.8,5h-4z" />
+</vector>

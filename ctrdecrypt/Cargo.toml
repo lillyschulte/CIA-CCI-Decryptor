@@ -11,9 +11,15 @@ hex-literal="0.3.3"
 aes = "0.8.4"
 cbc = {version ="0.1.2", features = ["std"]}
 sha256 = "1.4.0"
-attohttpc = "0.28.0"
 block-padding = "0.3.3"
 ctr = "0.9.2"
 byteorder = "1.5.0"
 log = "0.4.26"
 env_logger = "0.11.6"
+
+# Desktop uses the system TLS library; Android uses rustls so no OpenSSL cross-build is needed
+[target.'cfg(not(target_os = "android"))'.dependencies]
+attohttpc = "0.28.0"
+
+[target.'cfg(target_os = "android")'.dependencies]
+attohttpc = { version = "0.28.0", default-features = false, features = ["compress", "tls-rustls-webpki-roots"] }

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CIA CCI Decryptor</string>
+    <string name="subtitle">Decrypts .3ds, .cci and .cia files for Azahar</string>
+    <string name="channel_name">Decryption progress</string>
+
+    <string name="access_title">File access needed</string>
+    <string name="access_body">To read and write ROMs in any folder, allow \"All files access\" for this app.</string>
+    <string name="grant">Allow access</string>
+
+    <string name="folder_label">ROM folder</string>
+    <string name="choose_folder">Choose folder</string>
+    <string name="no_folder">No folder selected</string>
+    <string name="pick_folder_hint">Pick the folder that contains your ROMs.</string>
+    <string name="need_access_hint">Allow file access to see the ROMs in this folder.</string>
+    <string name="folder_missing">This folder no longer exists. Choose another one.</string>
+    <string name="unsupported_folder">That location can\'t be used. Pick a folder on internal storage or an SD card.</string>
+    <string name="no_roms">No .3ds, .cci or .cia files in this folder.</string>
+    <plurals name="roms_found">
+        <item quantity="one">%d ROM found</item>
+        <item quantity="other">%d ROMs found</item>
+    </plurals>
+
+    <string name="decrypt">Decrypt all</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="progress_label">Progress</string>
+    <string name="idle">Ready</string>
+    <string name="preparing">Reading ROM headers…</string>
+    <string name="file_of">File %1$d of %2$d: %3$s</string>
+    <string name="current_file_label">Current file</string>
+    <string name="all_files_label">All files</string>
+    <string name="percent">%d%%</string>
+    <string name="log_label">Log</string>
+</resources>

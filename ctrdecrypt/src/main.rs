@@ -270,8 +270,11 @@ fn get_new_key(key_y: u128, header: &NcchHdr, titleid: String) -> u128 {
         for country in ["JP", "US", "GB", "KR", "TW", "AU", "NZ"] {
             let req = attohttpc::get(format!("https://kagiya-ctr.cdn.nintendo.net/title/0x{}/ext_key?country={}", titleid, country))
                 .danger_accept_invalid_certs(true)
-                .send()
-                .unwrap();
+                .send();
+            let req = match req {
+                Ok(req) => req,
+                Err(e) => { debug!("Could not reach Nintendo servers: {}", e); break; }
+            };
             if req.is_success() {
                 let bytes = req.bytes().unwrap();
 

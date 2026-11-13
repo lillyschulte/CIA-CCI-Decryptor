@@ -60,6 +60,9 @@ Output files are written next to the originals:
 ```
 Shows each command and its output, writes the `ctrdecrypt` log to `log.txt`, and processes files even if they already look decrypted. Use this if a file does not produce any output.
 
+## Android
+An Android app (arm64, e.g. AYN Thor) lives in [`android/`](android/README.md).
+
 ## Seeds
 Some titles use seed crypto. `ctrdecrypt` reads seeds from `bin/seeddb.bin` and, if a seed is missing, tries to fetch it from Nintendo's servers (this needs an internet connection).
 
