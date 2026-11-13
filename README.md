@@ -29,7 +29,7 @@ sudo pacman -S rust unzip         # Arch
 
 ## Setup
 ```
-git clone https://github.com/lillyschulte/decryptor
+git clone https://github.com/lillyschulte/CIA-CCI-Decryptor
 cd decryptor
 ./setup.sh
 ```
