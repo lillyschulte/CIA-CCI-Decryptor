@@ -53,18 +53,43 @@ run() {
     fi
 }
 
-# Decrypt a ROM into .ncch files (ctrdecrypt looks for seeddb.bin next to itself)
+# Decrypt a ROM into .ncch files (ctrdecrypt looks for seeddb.bin next to itself).
+# Returns ctrdecrypt's exit status; it fails e.g. when a seed-encrypted title has no seed.
 decrypt_rom() {
+    local status
     if (( DEBUG )); then
-        {
-            echo "----------------------------------------------------"
-            "$CTRDECRYPT" "$1"
-            echo "------------------------End-------------------------"
-            echo
-        } >>log.txt 2>&1
+        echo "----------------------------------------------------" >>log.txt
+        "$CTRDECRYPT" "$1" >>log.txt 2>&1
+        status=$?
+        printf '%s\n\n' "------------------------End-------------------------" >>log.txt
     else
         "$CTRDECRYPT" "$1" --no-verbose >/dev/null 2>&1
+        status=$?
     fi
+    return $status
+}
+
+# Outputs written in this run (lowercase name -> source ROM), so two ROMs that map to the
+# same output name (e.g. Game.3ds and Game.cia) can't silently overwrite each other
+declare -A WRITTEN=()
+
+# build OUTPUT ROM MAKEROM-ARGS...: run makerom unless OUTPUT was already written this run
+build() {
+    local out="$1" src="$2"
+    shift 2
+    if [[ -n "${WRITTEN[${out,,}]:-}" ]]; then
+        echo "Skipping \"$src\": \"$out\" was already written from \"${WRITTEN[${out,,}]}\". Rename one of them and run again."
+        echo
+        return 1
+    fi
+    run "$MAKEROM" "$@" -ignoresign -target p -o "$out" && WRITTEN[${out,,}]="$src"
+}
+
+# Report a failed decrypt and remove whatever ctrdecrypt left behind
+decrypt_failed() {
+    echo "Failed to decrypt \"$1\" (run with --debug and see log.txt for details)"
+    echo
+    rm -f -- "${1%.*}".*.ncch
 }
 
 # Returns 0 if ctrtool reports the content as unencrypted
@@ -93,7 +118,10 @@ for rom in *.3ds *.cci; do
         continue
     fi
 
-    decrypt_rom "$rom"
+    if ! decrypt_rom "$rom"; then
+        decrypt_failed "$rom"
+        continue
+    fi
 
     # Files are named <name>.<Partition>.<index as 8 hex digits>.ncch
     args=()
@@ -109,7 +137,7 @@ for rom in *.3ds *.cci; do
         continue
     fi
 
-    run "$MAKEROM" -f cci -ignoresign -target p -o "$name-decrypted.cci" "${args[@]}"
+    build "$name-decrypted.cci" "$rom" -f cci "${args[@]}"
 done
 
 # ---- .cia ----
@@ -125,7 +153,10 @@ for rom in *.cia; do
         continue
     fi
 
-    decrypt_rom "$rom"
+    if ! decrypt_rom "$rom"; then
+        decrypt_failed "$rom"
+        continue
+    fi
 
     # Files are named <name>.<content index>.<content id as 8 hex digits>.ncch
     args=()
@@ -153,14 +184,14 @@ for rom in *.cia; do
     if grep -Eq '^T.*d.*00040000' content.txt; then
         if [[ $GAME_FORMAT == cci ]]; then
             # The content index is the CCI partition (0 game, 1 manual, 2 download play child)
-            run "$MAKEROM" -f cci -ignoresign -target p -o "$name-decrypted.cci" "${args[@]}"
+            build "$name-decrypted.cci" "$rom" -f cci "${args[@]}"
         else
-            run "$MAKEROM" -f cia -ignoresign -target p -o "$name-decrypted.cia" "${args[@]}" -ver "$ver"
+            build "$name-decrypted.cia" "$rom" -f cia "${args[@]}" -ver "$ver"
         fi
     fi
 
     if grep -Eq '^T.*d.*0004000e' content.txt; then
-        run "$MAKEROM" -f cia -ignoresign -target p -o "$name (Update)-decrypted.cia" "${dlc[@]}" -ver "$ver"
+        build "$name (Update)-decrypted.cia" "$rom" -f cia "${dlc[@]}" -ver "$ver"
     fi
 
     if grep -Eq '^T.*d.*0004008c' content.txt; then

@@ -118,6 +118,9 @@ class DecryptService : Service() {
 
         // Read headers first so we know what to do and how much work there is
         var skipped = 0
+        // Output paths already taken by an earlier ROM in this batch (lowercase: shared storage
+        // is case-insensitive), so two ROMs that map to the same name can't overwrite each other
+        val claimed = HashMap<String, String>()
         val tasks = roms.mapNotNull { rom ->
             val info = try {
                 RomInfo.read(rom)
@@ -126,21 +129,27 @@ class DecryptService : Service() {
                 skipped++
                 return@mapNotNull null
             }
+            val out = d.outputFile(rom, info)
+            val key = out.path.lowercase()
             val reason = when {
                 !info.encrypted -> "already decrypted"
                 info.format == RomFormat.CIA && info.kind == TitleKind.OTHER ->
                     "unsupported title type %016x".format(info.titleId)
-                d.outputFile(rom, info).exists() -> "${d.outputFile(rom, info).name} already exists"
+                out.exists() -> "${out.name} already exists"
+                key in claimed -> "${claimed[key]} is also saved as ${out.name}. Rename one of them and run again"
                 else -> null
             }
             if (reason != null) {
                 JobState.log("Skipping ${rom.name}: $reason")
                 skipped++
                 null
-            } else rom to info
+            } else {
+                claimed[key] = rom.name
+                Task(rom, info, out)
+            }
         }
 
-        totalBytes = tasks.sumOf { it.second.payloadSize }.coerceAtLeast(1).toFloat()
+        totalBytes = tasks.sumOf { it.info.payloadSize }.coerceAtLeast(1).toFloat()
         doneBytes = 0L
         var ok = 0
         var failed = 0
@@ -149,7 +158,7 @@ class DecryptService : Service() {
 
         for ((i, task) in tasks.withIndex()) {
             if (d.isCancelled) break
-            val (rom, info) = task
+            val (rom, info, out) = task
             JobState.fileIndex = i + 1
             JobState.fileName = rom.name
             JobState.fileProgress = 0f
@@ -167,7 +176,7 @@ class DecryptService : Service() {
             when {
                 success -> {
                     ok++
-                    JobState.log("Done in ${secs}s: ${d.outputFile(rom, info).name}")
+                    JobState.log("Done in ${secs}s: ${out.name}")
                     if (deleteOriginals) {
                         if (rom.delete()) {
                             deleted++
@@ -194,6 +203,8 @@ class DecryptService : Service() {
         JobState.log("")
         JobState.log(JobState.summary)
     }
+
+    private data class Task(val rom: File, val info: RomInfo, val out: File)
 
     private fun createChannel() {
         val nm = getSystemService(NotificationManager::class.java)

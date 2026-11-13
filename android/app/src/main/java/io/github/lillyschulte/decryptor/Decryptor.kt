@@ -3,6 +3,7 @@ package io.github.lillyschulte.decryptor
 import android.content.Context
 import android.os.SystemClock
 import java.io.File
+import java.io.RandomAccessFile
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
@@ -103,6 +104,12 @@ class Decryptor(context: Context, private val listener: Listener, private val op
                 listener.log("ctrdecrypt did not produce any decrypted partitions")
                 return false
             }
+            // A wrong key (e.g. a missing seed) still produces files, just garbage ones. Check them
+            // before building, so a bad result is never reported as success (or deletes the original).
+            ncch.firstOrNull { !looksDecrypted(it) }?.let {
+                listener.log("${it.name.substringAfter(rom.nameWithoutExtension + ".")} did not decrypt correctly (wrong key or missing seed)")
+                return false
+            }
 
             val cci = buildsCci(info)
             val args = mutableListOf(makerom.path, "-f", if (cci) "cci" else "cia")
@@ -179,6 +186,46 @@ class Decryptor(context: Context, private val listener: Listener, private val op
     }
 
     companion object {
+        /**
+         * Sanity check of a decrypted NCCH: the ExeFS file table must hold readable names and the
+         * RomFS must start with "IVFC". With a wrong key these are random bytes. The RomFS check
+         * matters most: with seed crypto, a missing seed only garbles the RomFS and .code.
+         */
+        fun looksDecrypted(file: File): Boolean = try {
+            RandomAccessFile(file, "r").use { f ->
+                val h = ByteArray(0x200).also { f.readFully(it) }
+                if (String(h, 0x100, 4, Charsets.US_ASCII) != "NCCH") return false
+                val unit = 0x200L shl (h[0x18E].toInt() and 0xFF) // flags[6]: media unit size
+                val exefsOffset = h.le32(0x1A0) * unit
+                val exefsSize = h.le32(0x1A4) * unit
+                val romfsOffset = h.le32(0x1B0) * unit
+                val romfsSize = h.le32(0x1B4) * unit
+                if (exefsSize > 0) {
+                    val table = ByteArray(0xA0).also { f.seek(exefsOffset); f.readFully(it) }
+                    if (table[0].toInt() == 0) return false // first file name can't be empty
+                    for (entry in 0 until 10) {
+                        var ended = false
+                        for (i in 0 until 8) {
+                            val c = table[entry * 16 + i].toInt() and 0xFF
+                            if (c == 0) ended = true
+                            else if (ended || c !in 0x20..0x7E) return false
+                        }
+                    }
+                }
+                if (romfsSize > 0) {
+                    val magic = ByteArray(4).also { f.seek(romfsOffset); f.readFully(it) }
+                    if (String(magic, Charsets.US_ASCII) != "IVFC") return false
+                }
+                true
+            }
+        } catch (_: java.io.IOException) {
+            false
+        }
+
+        private fun ByteArray.le32(i: Int): Long =
+            (this[i].toLong() and 0xFF) or ((this[i + 1].toLong() and 0xFF) shl 8) or
+                ((this[i + 2].toLong() and 0xFF) shl 16) or ((this[i + 3].toLong() and 0xFF) shl 24)
+
         private val EXTENSIONS = setOf("3ds", "cci", "cia")
         /** 16 hex digit title ID at the start of a name, plus the separator after it */
         private val TITLE_ID_PREFIX = Regex("^[0-9A-Fa-f]{16}[ _.-]+")
