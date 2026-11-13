@@ -52,7 +52,14 @@ class DecryptService : Service() {
         val folder = intent?.getStringExtra(EXTRA_FOLDER)
         createChannel()
         startForeground(NOTIFICATION_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        if (JobState.running || folder == null) return START_NOT_STICKY
+        // Already running: the foreground notification belongs to that batch, which stops the
+        // service when it ends. Nothing to do (no folder): don't leave a stuck notification behind.
+        if (JobState.running) return START_NOT_STICKY
+        if (folder == null) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return START_NOT_STICKY
+        }
 
         JobState.reset()
         JobState.running = true
@@ -88,6 +95,7 @@ class DecryptService : Service() {
             gameCiaAsCci = settings.gameCiaAsCci,
             stripTitleId = settings.stripTitleId,
             updateDir = settings.updateDir(dir),
+            otherUpdateDirs = settings.allUpdateDirs(dir),
         )
         val deleteOriginals = settings.deleteOriginals
         val d = Decryptor(this, object : Decryptor.Listener {
@@ -131,11 +139,13 @@ class DecryptService : Service() {
             }
             val out = d.outputFile(rom, info)
             val key = out.path.lowercase()
+            val existing = d.existingOutput(rom, info)
             val reason = when {
                 !info.encrypted -> "already decrypted"
                 info.format == RomFormat.CIA && info.kind == TitleKind.OTHER ->
                     "unsupported title type %016x".format(info.titleId)
-                out.exists() -> "${out.name} already exists"
+                existing != null -> "already decrypted as ${existing.name}" +
+                    if (existing.parentFile != rom.absoluteFile.parentFile) " in ${existing.parentFile?.name}" else ""
                 key in claimed -> "${claimed[key]} is also saved as ${out.name}. Rename one of them and run again"
                 else -> null
             }

@@ -20,6 +20,8 @@ class Decryptor(context: Context, private val listener: Listener, private val op
         val stripTitleId: Boolean = true,
         /** Write decrypted updates and DLC here instead of next to the original (null = next to it) */
         val updateDir: File? = null,
+        /** Other folders where earlier runs may have put decrypted updates and DLC */
+        val otherUpdateDirs: List<File> = emptyList(),
     )
 
     interface Listener {
@@ -56,21 +58,46 @@ class Decryptor(context: Context, private val listener: Listener, private val op
         info.format == RomFormat.CCI || (options.gameCiaAsCci && info.kind == TitleKind.GAME)
 
     fun outputFile(rom: File, info: RomInfo): File {
-        val stem = rom.nameWithoutExtension.let { name ->
-            if (options.stripTitleId) TITLE_ID_PREFIX.replace(name, "").ifEmpty { name } else name
-        }
-        val name = when {
-            buildsCci(info) -> "$stem-decrypted.cci"
-            info.kind == TitleKind.UPDATE -> "$stem (Update)-decrypted.cia"
-            info.kind == TitleKind.DLC -> "$stem (DLC)-decrypted.cia"
-            else -> "$stem-decrypted.cia"
-        }
-        val addOn = info.format == RomFormat.CIA && (info.kind == TitleKind.UPDATE || info.kind == TitleKind.DLC)
-        val dir = if (addOn && options.updateDir != null)
-            options.updateDir
-        else rom.absoluteFile.parentFile
+        val stem = if (options.stripTitleId) stripTitleId(rom.nameWithoutExtension) else rom.nameWithoutExtension
+        val name = stem + if (buildsCci(info)) "-decrypted.cci" else ciaSuffix(info)
+        val dir = if (isAddOn(info) && options.updateDir != null) options.updateDir else rom.absoluteFile.parentFile
         return File(dir, name)
     }
+
+    /**
+     * A decrypted copy of [rom] that already exists, made by this run's settings or any other
+     * (game saved as .cia or .cci, title ID kept or removed, update/DLC next to the ROM or sorted
+     * into a folder), so changing a setting doesn't decrypt the same ROM again.
+     */
+    fun existingOutput(rom: File, info: RomInfo): File? {
+        val out = outputFile(rom, info)
+        if (out.exists()) return out
+        val stems = linkedSetOf(rom.nameWithoutExtension, stripTitleId(rom.nameWithoutExtension))
+        val suffixes = when {
+            info.format == RomFormat.CCI -> listOf("-decrypted.cci")
+            info.kind == TitleKind.GAME -> listOf("-decrypted.cci", "-decrypted.cia")
+            else -> listOf(ciaSuffix(info))
+        }
+        val dirs = linkedSetOf(rom.absoluteFile.parentFile!!)
+        if (isAddOn(info)) {
+            options.updateDir?.let { dirs += it }
+            dirs += options.otherUpdateDirs
+        }
+        return dirs.asSequence()
+            .flatMap { dir -> stems.asSequence().flatMap { stem -> suffixes.asSequence().map { File(dir, stem + it) } } }
+            .firstOrNull { it.exists() }
+    }
+
+    private fun isAddOn(info: RomInfo) =
+        info.format == RomFormat.CIA && (info.kind == TitleKind.UPDATE || info.kind == TitleKind.DLC)
+
+    private fun ciaSuffix(info: RomInfo) = when (info.kind) {
+        TitleKind.UPDATE -> " (Update)-decrypted.cia"
+        TitleKind.DLC -> " (DLC)-decrypted.cia"
+        else -> "-decrypted.cia"
+    }
+
+    private fun stripTitleId(name: String) = TITLE_ID_PREFIX.replace(name, "").ifEmpty { name }
 
     /** Returns true if the decrypted output was written. */
     fun decrypt(rom: File, info: RomInfo): Boolean {

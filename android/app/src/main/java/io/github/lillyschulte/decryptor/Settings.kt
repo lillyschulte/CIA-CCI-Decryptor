@@ -41,6 +41,10 @@ class Settings(context: Context) {
     fun updateDir(romDir: File): File? =
         if (!sortUpdates) null else updateFolder?.let(::File) ?: File(romDir, DEFAULT_UPDATE_FOLDER)
 
+    /** Every folder decrypted updates and DLC may have been sorted into, for [romDir] */
+    fun allUpdateDirs(romDir: File): List<File> =
+        listOfNotNull(updateFolder?.let(::File), File(romDir, DEFAULT_UPDATE_FOLDER))
+
     companion object {
         const val DEFAULT_UPDATE_FOLDER = "Updates and DLC"
     }
